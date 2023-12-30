@@ -1,0 +1,27 @@
+{
+    "name": "exhum4n/laravel-library",
+    "autoload": {
+        "psr-4": {
+            "Exhum4n\\LaravelLibrary\\": "src/"
+        },
+        "files": [
+            "helpers/helper.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "exhum4n"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^10.39"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Exhum4n\\LaravelLibrary\\Providers\\LaravelLibraryServiceProvider"
+            ]
+        }
+    }
+}
