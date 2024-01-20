@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Exhum4n\LaravelLibrary\Exceptions;
 
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpFoundation\Response as Code;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -18,6 +16,13 @@ class Handler extends ExceptionHandler
     protected $dontFlash = [
         'password',
         'password_confirmation',
+    ];
+
+    protected array $allowedHttpCodes = [
+        Code::HTTP_UNAUTHORIZED,
+        Code::HTTP_FORBIDDEN,
+        Code::HTTP_NOT_FOUND,
+        Code::HTTP_UNPROCESSABLE_ENTITY,
     ];
 
     /**
@@ -33,13 +38,6 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $e): JsonResponse
     {
         $exceptionCode = $this->getExceptionCode($e);
-        if ($e instanceof QueryException) {
-            $exceptionCode = 400;
-        }
-
-        if ($e instanceof AuthenticationException) {
-            $exceptionCode = 401;
-        }
 
         $errorBody = [
             'message' => $e->getMessage(),
@@ -65,13 +63,12 @@ class Handler extends ExceptionHandler
 
     protected function getExceptionCode(Throwable $exception): int
     {
-        $code = (int) $exception->getCode();
-
-        if (empty($code) || (is_numeric($code) === false)) {
-            return Response::HTTP_FORBIDDEN;
+        $exceptionCode = $exception->getCode();
+        if (in_array($exception, $this->allowedHttpCodes) === false) {
+            return 500;
         }
 
-        return $code;
+        return $exceptionCode;
     }
 
     protected function isValidationException(Throwable $exception): bool
