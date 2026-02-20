@@ -20,7 +20,7 @@ class Enum
             }
 
             if (isset($case->value) === false) {
-                return false;
+                continue;
             }
 
             if ($case->value === $value) {

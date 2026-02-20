@@ -17,7 +17,6 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Validation\ValidationException;
-use Psr\Http\Message\MessageInterface;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 
 class Client extends PendingRequest

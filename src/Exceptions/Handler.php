@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Exhum4n\LaravelLibrary\Exceptions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpFoundation\Response as Code;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -18,61 +21,75 @@ class Handler extends ExceptionHandler
         'password_confirmation',
     ];
 
-    protected array $allowedHttpCodes = [
-        Code::HTTP_UNAUTHORIZED,
-        Code::HTTP_FORBIDDEN,
-        Code::HTTP_NOT_FOUND,
-        Code::HTTP_UNPROCESSABLE_ENTITY,
-    ];
-
-    /**
-     * @param Throwable $e
-     *
-     * @throws Throwable
-     */
-    public function report(Throwable $e): void
-    {
-        parent::report($e);
-    }
-
     public function render($request, Throwable $e): JsonResponse
     {
-        $exceptionCode = $this->getExceptionCode($e);
-
         $errorBody = [
-            'message' => $e->getMessage(),
+            'error' => $this->getMessage($e),
+            'details' => $this->getDetail($e),
         ];
-
-        if ($e instanceof NotFoundHttpException) {
-            $errorBody = [
-                'message' => 'endpoint_not_found',
-            ];
-        }
-
-        if ($this->isValidationException($e)) {
-            $errorBody['message'] = trans('validation.failed');
-            $errorBody['errors'] = json_decode($e->getMessage(), true, 512, JSON_THROW_ON_ERROR);
-        }
 
         if (config('app.debug')) {
             $errorBody['trace'] = $e->getTrace();
         }
 
-        return response()->json($errorBody, $exceptionCode);
+        return response()->json($errorBody, $this->getCode($e));
     }
 
-    protected function getExceptionCode(Throwable $exception): int
+    protected function getMessage(Throwable $exception): string
     {
-        $exceptionCode = $exception->getCode();
-        if (in_array($exception, $this->allowedHttpCodes) === false) {
-            return 500;
+        if ($exception instanceof AuthenticationException) {
+            return 'unauthenticated';
         }
 
-        return $exceptionCode;
+        if ($exception instanceof NotFoundHttpException) {
+            return 'endpoint_not_found';
+        }
+
+        if ($exception instanceof ValidationException) {
+            return 'validation_failed';
+        }
+
+        $message = $exception->getMessage();
+        if (empty($message)) {
+            return 'internal_server_error';
+        }
+
+        return $message;
     }
 
-    protected function isValidationException(Throwable $exception): bool
+    protected function getDetail(Throwable $exception): string|array
     {
-        return $exception instanceof ValidationException;
+        if ($exception instanceof ValidationException) {
+            return $exception->errors();
+        }
+
+        return 'no_details';
+    }
+
+    protected function getCode(Throwable $exception): int
+    {
+        $code = $exception->getCode();
+
+        if ($exception instanceof AuthorizationException) {
+            return Response::HTTP_FORBIDDEN;
+        }
+
+        if ($exception instanceof ValidationException) {
+            return Response::HTTP_UNPROCESSABLE_ENTITY;
+        }
+
+        if ($exception instanceof QueryException) {
+            return Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        if ($code === 0) {
+            $code = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        if (is_numeric($code) === false) {
+            return Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        return $code;
     }
 }

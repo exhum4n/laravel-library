@@ -9,9 +9,10 @@ declare(strict_types=1);
 
 namespace Exhum4n\LaravelLibrary\Repositories;
 
+use Exhum4n\LaravelLibrary\Data\DataObject;
+use Exhum4n\LaravelLibrary\Exceptions\EntityNotFoundException;
 use Carbon\Carbon;
 use Exhum4n\LaravelLibrary\Models\Model;
-use Exhum4n\LaravelLibrary\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -38,11 +39,6 @@ abstract class EloquentRepository
         return $this->model::query();
     }
 
-    public function getFirstOrFail(array $where): mixed
-    {
-        return $this->model::where($where)->firstOrFail();
-    }
-
     public function getFirst(array $where): mixed
     {
         return $this->model::where($where)->first();
@@ -55,11 +51,27 @@ abstract class EloquentRepository
         ]);
     }
 
-    public function getByIdOrFail(int|string $id, string $pKey = 'id'): mixed
+    /**
+     * @throws EntityNotFoundException
+     */
+    public function getFirstOrFail(array $where): mixed
     {
-        return $this->getFirstOrFail([
-            $pKey => $id
-        ]);
+        $record = $this->model::where($where)->first();
+        if ($record === null) {
+            throw new EntityNotFoundException();
+        }
+
+        return $record;
+    }
+
+    public function getByIdOrFail(string $id, string $pKey = 'id'): mixed
+    {
+        $record = $this->getById($id);
+        if ($record === null) {
+            throw new EntityNotFoundException();
+        }
+
+        return $record;
     }
 
     public function getByName(string $name): mixed
@@ -94,9 +106,13 @@ abstract class EloquentRepository
         return $this->model::where($filters)->paginate($perPage);
     }
 
-    public function create(array $data): Model|User
+    public function create(array|DataObject $data): mixed
     {
         $newRecord = new $this->model();
+
+        if ($data instanceof DataObject) {
+            $data = $data->toArray();
+        }
 
         $newRecord->fill($data);
         $newRecord->save();
@@ -117,10 +133,14 @@ abstract class EloquentRepository
         });
     }
 
-    public function update(Model|User $model, array $data): Model|User
+    public function update(Model $model, array|DataObject $data): Model
     {
         if (get_class($model) !== $this->model) {
             throw new ModelNotFoundException('wrong_model_class');
+        }
+
+        if ($data instanceof DataObject) {
+            $data = $data->toArray();
         }
 
         $model->fill($data);

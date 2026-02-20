@@ -1,49 +1,37 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Exhum4n\LaravelLibrary\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * @property string $id
  * @property string $email
- * @property string $password
  * @property string $status
+ * @property string $role
+ * @property string $password
+ *
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
-class User extends Model
+class User extends Authenticatable
 {
-    use HasFactory;
+    use Notifiable;
     use HasUuids;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    protected $table = 'auth.users';
+
     protected $fillable = [
         'email',
         'password',
+        'role',
         'status',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'password' => 'hashed',
     ];
 }

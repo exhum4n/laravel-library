@@ -6,14 +6,23 @@ declare(strict_types=1);
 
 namespace Exhum4n\LaravelLibrary\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Facades\DB;
 
 /**
- * @property int|string $id
+ * @property string $id
  */
 abstract class Model extends BaseModel
 {
+    use HasUuids;
+    use HasFactory;
+
+    protected $keyType = 'string';
+
+    public $timestamps = false;
+
     public function save(array $options = [])
     {
         return DB::transaction(function () use ($options) {
