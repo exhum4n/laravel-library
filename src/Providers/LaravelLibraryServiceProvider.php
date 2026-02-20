@@ -2,14 +2,13 @@
 
 /**
  * @noinspection PhpUndefinedClassInspection
- * @noinspection PhpUndefinedNamespaceInspection
  */
 
 declare(strict_types=1);
 
 namespace Exhum4n\LaravelLibrary\Providers;
 
-use App\Exceptions\Handler as BaseHandler;
+use Illuminate\Foundation\Exceptions\Handler as BaseHandler;
 use Exhum4n\LaravelLibrary\Exceptions\Handler;
 use Illuminate\Auth\Middleware\Authenticate as BaseAuthenticate;
 use Exhum4n\LaravelLibrary\Http\Middleware\Authenticate;
